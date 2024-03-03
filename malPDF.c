@@ -57,9 +57,9 @@ void ExtractJS(const char* inputFilePath) {
         return;
     }
 
-    char buffer[2048];
+    char buffer[5048];
     size_t bytesRead;
-    const char* word = "JavaScript";
+    const char* word = "/S/JavaScript";
     size_t wordLength = strlen(word);
 
     while ((bytesRead = fread(buffer, 1, sizeof(buffer), file)) > 0) {
@@ -85,6 +85,51 @@ void ExtractJS(const char* inputFilePath) {
     fclose(outputFile);
 }
 
+void ExtractLaunch(const char* inputFilePath) {
+    const char* outputFilePath = "LaunchOutput.txt";
+
+    FILE *file = fopen(inputFilePath, "rb");
+    if (!file) {
+        printf("Could not open file %s\n", inputFilePath);
+        return;
+    }
+
+    FILE *outputFile = fopen(outputFilePath, "w");
+    if (!outputFile) {
+        printf("Could not open file %s for writing\n", outputFilePath);
+        fclose(file); 
+        return;
+    }
+
+    char buffer[5048];
+    size_t bytesRead;
+    const char* word = "/S/Launch";
+    size_t wordLength = strlen(word);
+
+    while ((bytesRead = fread(buffer, 1, sizeof(buffer), file)) > 0) {
+        for (size_t i = 0; i < bytesRead - wordLength; ++i) {
+            if (strncmp(&buffer[i], word, wordLength) == 0) {
+                size_t start, end;
+                for (start = i; start > 0 && buffer[start] != '<'; --start);
+                for (end = i; end < bytesRead && buffer[end] != '>'; ++end);
+
+                if (buffer[start] == '<' && buffer[end] == '>') {
+                    fprintf(outputFile, "<<");
+                    for (size_t j = start + 1; j < end; ++j) {
+                        fprintf(outputFile, "%c", buffer[j]);
+                    }
+                    fprintf(outputFile, ">>\n\n"); 
+                }
+                i += wordLength - 1;
+            }
+        }
+    }
+    printf("Launch Objects has been extracted successfully !\n");
+    fclose(file);
+    fclose(outputFile);
+}
+
+
 int main(int argc, char *argv[]) {
     
     
@@ -106,6 +151,8 @@ int main(int argc, char *argv[]) {
     }
     printf("====================================================\n");
     ExtractJS(filePath);
+    printf("====================================================\n");
+    ExtractLaunch(filePath);
     printf("====================================================\n");
 
     return 0;
